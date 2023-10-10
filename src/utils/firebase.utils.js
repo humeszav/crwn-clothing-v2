@@ -15,7 +15,11 @@ import {
   getFirestore,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  collection,
+  writeBatch,
+  query,
+  getDocs
 } from 'firebase/firestore';
 
 
@@ -36,11 +40,36 @@ googleProvider.setCustomParameters({
 });
 
 export const auth = getAuth();
-export const signInWithGooglePopup = () => signInWithPopup(auth, googleProvider);
-export const signInWithGoogleRedirect = () => signInWithRedirect(auth, googleProvider);
 
 export const db = getFirestore();
 
+/**
+ * Helper to init products database collections
+ * 
+ * @param {*} collectionKey 
+ * @param {*} objectsToAdd 
+ * @returns 
+ */
+export const addCollectionAndDocuments = async (collectionKey, objectsToAdd) => {
+  const collectionRef = collection(db, collectionKey);
+  
+  const batch = writeBatch(db);
+
+  objectsToAdd.forEach(obj => {
+    const newDocRef = doc(collectionRef, obj.title.toLowerCase());
+    batch.set(newDocRef, obj);
+  });
+
+  return await batch.commit();
+};
+
+/**
+ * Add user object to database
+ * 
+ * @param {*} userAuth 
+ * @param {*} additionalData 
+ * @returns 
+ */
 export const createUserDocumentFromAuth = async (userAuth, additionalData = {}) => { 
   if (!userAuth) return;
 
@@ -66,6 +95,29 @@ export const createUserDocumentFromAuth = async (userAuth, additionalData = {}) 
   return userDocRef;
 };
 
+/**
+ * Get categories and documents from database
+ */
+export const getCategoriesAndDocuments = async () => {
+  const collectionRef = collection(db, 'categories');
+  const q = query(collectionRef);
+
+  const querySnapshot = await getDocs(q);
+  const categoryMap = querySnapshot.docs.reduce((accumulator, doc) => {
+    const { title, items } = doc.data();
+    accumulator[title.toLowerCase()] = items;
+    return accumulator;
+  }, {});
+
+  return categoryMap;
+};
+
+/**
+ * Create new user with email and password
+ * @param {*} email 
+ * @param {*} password 
+ * @returns 
+ */
 export const createAuthUserWithEmailAndPassword = async (email, password) => {
 
   if (!email || !password) return;
@@ -73,6 +125,12 @@ export const createAuthUserWithEmailAndPassword = async (email, password) => {
   return await createUserWithEmailAndPassword(auth, email, password);
 };
 
+/**
+ * Sign in user with email and password
+ * @param {*} email 
+ * @param {*} password 
+ * @returns 
+ */
 export const signInAuthUserWithEmailAndPassword = async (email, password) => {
 
   if (!email || !password) return;
@@ -80,8 +138,18 @@ export const signInAuthUserWithEmailAndPassword = async (email, password) => {
   return await signInWithEmailAndPassword(auth, email, password);
 };
 
+export const signInWithGooglePopup = () => signInWithPopup(auth, googleProvider);
+export const signInWithGoogleRedirect = () => signInWithRedirect(auth, googleProvider);
+
+/**
+ * Sign out user
+ */
 export const signOutAuthUser = async () => await signOut(auth);
 
+/**
+ * Add listener to auth state changes, login and logout
+ * @returns unscubscribe function
+ */
 export const onAuthStateChangedListener = (callback) => {
   if (!callback) {
     console.error('Callback function not provided');

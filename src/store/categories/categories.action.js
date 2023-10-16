@@ -19,14 +19,14 @@ export const fetchCategoriesFail = (error) =>
  * This is a thunk
  * @returns 
  */  
-export const fetchCategoriesAsync = () => async (dispatch) => {
-  dispatch(fetchCategoriesStart());
+// export const fetchCategoriesAsync = () => async (dispatch) => {
+//   dispatch(fetchCategoriesStart());
 
-  try {
-    const categoriesArray = await getCategoriesAndDocuments();
-    dispatch(fetchCategoriesSuccess(categoriesArray));
+//   try {
+//     const categoriesArray = await getCategoriesAndDocuments();
+//     dispatch(fetchCategoriesSuccess(categoriesArray));
 
-  } catch (error) {
-    dispatch(fetchCategoriesFail(error));
-  }
-};
+//   } catch (error) {
+//     dispatch(fetchCategoriesFail(error));
+//   }
+// };
